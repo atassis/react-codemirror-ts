@@ -59,9 +59,5 @@ typings/
 
 # next.js build output
 .next
-
-# compiled
-lib
-
-.idea
-.vscode
+*.env
+dist/**/*
