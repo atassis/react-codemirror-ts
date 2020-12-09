@@ -1,7 +1,6 @@
 # react-codemirror-ts
 
 [![npm][npm]][npm-url]
-[![node][node]][node-url]
 [![deps][deps]][deps-url]
 [![licenses][licenses]][licenses-url]
 [![downloads][downloads]][downloads-url]
@@ -55,8 +54,6 @@ export { CodemirrorExample };
 
 [npm]: https://img.shields.io/npm/v/react-codemirror-ts.svg
 [npm-url]: https://npmjs.com/package/react-codemirror-ts
-[node]: https://img.shields.io/node/v/react-codemirror-ts.svg
-[node-url]: https://nodejs.org
 [deps]: https://img.shields.io/david/atassis/react-codemirror-ts.svg
 [deps-url]: https://david-dm.org/atassis/react-codemirror-ts
 [licenses-url]: http://opensource.org/licenses/MIT
