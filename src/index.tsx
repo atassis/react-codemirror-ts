@@ -1,6 +1,5 @@
 import React, { FunctionComponent, useEffect, useRef, useState } from 'react';
 import classname from 'classnames';
-import isEqual from 'lodash.isequal';
 import CodeMirror, {
   EditorFromTextArea,
   EditorChangeLinkedList,
@@ -8,14 +7,14 @@ import CodeMirror, {
   EditorConfiguration,
   Editor,
 } from 'codemirror';
+import isEqual from 'fast-deep-equal';
 
 type CodemirrorProps = {
   autoFocus?: boolean;
   className?: string;
   // @ts-ignore
   codeMirrorInstance?: any;
-  defaultValue: string;
-  name: string;
+  name?: string;
   onChange?: (value: string, options: EditorChangeLinkedList) => void;
   onCursorActivity?: (EditorFromTextArea: Editor) => void;
   onFocusChange?: (
@@ -25,27 +24,24 @@ type CodemirrorProps = {
   ) => void;
   onScroll?: (scrollInfo: ScrollInfo) => void;
   options?: EditorConfiguration;
-  path: string;
-  value: string;
+  value?: string;
   preserveScrollPosition?: boolean;
 };
 
-const Codemirror: FunctionComponent<CodemirrorProps> = ({
-  autoFocus,
-  className,
-  codeMirrorInstance = CodeMirror,
-  name,
-  path,
-  defaultValue,
-  options,
-  preserveScrollPosition = false,
-  value,
-  children,
-  onChange,
-  onCursorActivity,
-  onFocusChange,
-  onScroll,
-}) => {
+const Codemirror: FunctionComponent<CodemirrorProps> = (props) => {
+  const {
+    autoFocus,
+    className,
+    codeMirrorInstance = CodeMirror,
+    name,
+    options,
+    onChange,
+    onCursorActivity,
+    onFocusChange,
+    onScroll,
+    preserveScrollPosition = false,
+    value = '',
+  } = props;
   const codemirrorInstance = useRef<EditorFromTextArea | null>(null);
   const [isFocused, setFocused] = useState<boolean>(false);
   const textareaNode = useRef<HTMLTextAreaElement | null>(null);
@@ -102,7 +98,6 @@ const Codemirror: FunctionComponent<CodemirrorProps> = ({
       codeMirror.on('focus', focusChanged.bind(null, true));
       codeMirror.on('blur', focusChanged.bind(null, false));
       codeMirror.on('scroll', scrollChanged);
-      codeMirror.setValue(defaultValue || value || '');
     }
     return () => {
       const codeMirror = codemirrorInstance.current;
@@ -113,7 +108,16 @@ const Codemirror: FunctionComponent<CodemirrorProps> = ({
         codeMirror.toTextArea();
       }
     };
-  }, [textareaNode.current, defaultValue, value]);
+  }, [textareaNode.current]);
+
+  useEffect(() => {
+    const codeMirror = codemirrorInstance.current;
+    if (!codeMirror) {
+      return;
+    }
+    codeMirror.setValue(value);
+  }, [value]);
+
   useEffect(
     function () {
       const codeMirror = codemirrorInstance.current;
@@ -124,8 +128,6 @@ const Codemirror: FunctionComponent<CodemirrorProps> = ({
         const prevScrollPosition = codeMirror.getScrollInfo();
         codeMirror.setValue(value);
         codeMirror.scrollTo(prevScrollPosition.left, prevScrollPosition.top);
-      } else {
-        codeMirror.setValue(value);
       }
       if (typeof options === 'object') {
         Object.entries(options).forEach(([optionName, optionValue]) =>
@@ -140,10 +142,8 @@ const Codemirror: FunctionComponent<CodemirrorProps> = ({
   return (
     <div className={editorClassName}>
       <textarea
-        ref={(ref) => {
-          textareaNode.current = ref;
-        }}
-        name={name || path}
+        ref={textareaNode}
+        name={name}
         defaultValue={value}
         autoComplete="off"
         autoFocus={autoFocus}
