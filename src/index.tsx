@@ -1,22 +1,22 @@
-import React, { FunctionComponent, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+
 import classname from 'classnames';
 import CodeMirror, {
   EditorFromTextArea,
-  EditorChangeLinkedList,
   ScrollInfo,
   EditorConfiguration,
   Editor,
+  EditorChange,
 } from 'codemirror';
 import isEqual from 'fast-deep-equal';
 
-type CodemirrorProps = {
+export type CodemirrorProps = {
   autoFocus?: boolean;
   className?: string;
-  // @ts-ignore
-  codeMirrorInstance?: any;
+  codeMirrorInstance?: typeof CodeMirror;
   name?: string;
-  onChange?: (value: string, options: EditorChangeLinkedList) => void;
-  onCursorActivity?: (EditorFromTextArea: Editor) => void;
+  onChange?: (value: string, options: EditorChange) => void;
+  onCursorActivity?: (editor: Editor) => void;
   onFocusChange?: (
     focused: boolean,
     instance: Editor,
@@ -28,7 +28,7 @@ type CodemirrorProps = {
   preserveScrollPosition?: boolean;
 };
 
-const Codemirror: FunctionComponent<CodemirrorProps> = (props) => {
+export const Codemirror = (props: CodemirrorProps) => {
   const {
     autoFocus,
     className,
@@ -66,20 +66,25 @@ const Codemirror: FunctionComponent<CodemirrorProps> = (props) => {
   }
   function focusChanged(focused: boolean, instance: Editor, event: FocusEvent) {
     setFocused(focused);
-    onFocusChange && onFocusChange(focused, instance, event);
+    if (onFocusChange) {
+      onFocusChange(focused, instance, event);
+    }
   }
   function cursorActivity(cm: Editor) {
-    onCursorActivity && onCursorActivity(cm);
+    if (onCursorActivity) {
+      onCursorActivity(cm);
+    }
   }
   function scrollChanged(cm: Editor) {
-    onScroll && onScroll(cm.getScrollInfo());
+    if (onScroll) {
+      onScroll(cm.getScrollInfo());
+    }
   }
   function codemirrorValueChanged(
     instance: Editor,
-    changeObj: EditorChangeLinkedList,
+    changeObj: EditorChange,
   ): void {
-    // @ts-ignore
-    if (onChange && instance.origin !== 'setValue') {
+    if (onChange && changeObj.origin !== 'setValue') {
       onChange(instance.getValue(), changeObj);
     }
   }
@@ -91,7 +96,7 @@ const Codemirror: FunctionComponent<CodemirrorProps> = (props) => {
       );
       const codeMirror = codemirrorInstance.current;
       if (!codeMirror) {
-        return;
+        return () => null;
       }
       codeMirror.on('change', codemirrorValueChanged);
       codeMirror.on('cursorActivity', cursorActivity);
@@ -118,26 +123,23 @@ const Codemirror: FunctionComponent<CodemirrorProps> = (props) => {
     codeMirror.setValue(value);
   }, [value]);
 
-  useEffect(
-    function () {
-      const codeMirror = codemirrorInstance.current;
-      if (!codeMirror) {
-        return;
-      }
-      if (preserveScrollPosition) {
-        const prevScrollPosition = codeMirror.getScrollInfo();
-        codeMirror.setValue(value);
-        codeMirror.scrollTo(prevScrollPosition.left, prevScrollPosition.top);
-      }
-      if (typeof options === 'object') {
-        Object.entries(options).forEach(([optionName, optionValue]) =>
-          // @ts-ignore
-          setOptionIfChanged(optionName, optionValue),
-        );
-      }
-    },
-    [value, JSON.stringify(options)],
-  );
+  useEffect(() => {
+    const codeMirror = codemirrorInstance.current;
+    if (!codeMirror) {
+      return;
+    }
+    if (preserveScrollPosition) {
+      const prevScrollPosition = codeMirror.getScrollInfo();
+      codeMirror.setValue(value);
+      codeMirror.scrollTo(prevScrollPosition.left, prevScrollPosition.top);
+    }
+    if (typeof options === 'object') {
+      Object.entries(options).forEach(([optionName, optionValue]) =>
+        // @ts-ignore
+        setOptionIfChanged(optionName, optionValue),
+      );
+    }
+  }, [value, JSON.stringify(options)]);
 
   return (
     <div className={editorClassName}>
@@ -151,5 +153,3 @@ const Codemirror: FunctionComponent<CodemirrorProps> = (props) => {
     </div>
   );
 };
-
-export { Codemirror };
